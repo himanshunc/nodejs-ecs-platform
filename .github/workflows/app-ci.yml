@@ -18,7 +18,7 @@ env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: nodejs-dev-ecr
   IMAGE_TAG: latest
-  IMAGE_SHA_TAG: ${{ github.sha }}
+  #IMAGE_SHA_TAG: ${{ github.sha }}
 
 jobs:
   app-ci:
@@ -36,6 +36,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set short commit SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -73,7 +76,7 @@ jobs:
         run: |
          docker build \
           -t $ECR_REPOSITORY:$IMAGE_TAG \
-          -t $ECR_REPOSITORY:$IMAGE_SHA_TAG \
+          -t $ECR_REPOSITORY:$SHORT_SHA \
           .
 
       - name: Run Trivy image scan
@@ -93,7 +96,7 @@ jobs:
           ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
 
           docker tag $ECR_REPOSITORY:$IMAGE_TAG \
-          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_SHA_TAG
+          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$SHORT_SHA
 
       - name: Push Docker image to ECR
         if: github.event_name == 'push'
@@ -102,4 +105,4 @@ jobs:
           ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
 
           docker push \
-          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_SHA_TAG
+          ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$SHORT_SHA
