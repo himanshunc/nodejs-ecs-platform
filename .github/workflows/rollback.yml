@@ -39,6 +39,12 @@ jobs:
             --task-definition $TASK_FAMILY \
             --query taskDefinition > task-def.json
 
+      - name: Validate image exists in ECR
+        run: |
+          aws ecr describe-images \
+            --repository-name $ECR_REPOSITORY \
+            --image-ids imageTag=${{ github.event.inputs.image_tag }}
+
       - name: Update image for rollback
         run: |
           IMAGE_URI=500849274222.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPOSITORY:${{ github.event.inputs.image_tag }}
@@ -65,6 +71,10 @@ jobs:
             --output text)
 
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+      - name: Print rollback target
+        run: |
+          echo "Rolling back to image tag: ${{ github.event.inputs.image_tag }}"
 
       - name: Deploy rollback version
         run: |
