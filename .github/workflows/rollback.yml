@@ -1,0 +1,74 @@
+name: Rollback ECS Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Enter image tag (short SHA) to rollback"
+        required: true
+
+env:
+  AWS_REGION: ap-south-1
+  CLUSTER_NAME: nodejs-dev-ecs-cluster
+  SERVICE_NAME: nodejs-dev-ecs-service
+  TASK_FAMILY: nodejs-dev-ecs-task
+  ECR_REPOSITORY: nodejs-dev-ecr
+
+jobs:
+  rollback:
+    name: Rollback ECS Service
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::500849274222:role/nodejs-dev-github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition $TASK_FAMILY \
+            --query taskDefinition > task-def.json
+
+      - name: Update image for rollback
+        run: |
+          IMAGE_URI=500849274222.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPOSITORY:${{ github.event.inputs.image_tag }}
+
+          jq --arg IMAGE "$IMAGE_URI" '
+            del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            ) |
+            .containerDefinitions[0].image = $IMAGE
+          ' task-def.json > new-task-def.json
+
+      - name: Register task definition
+        id: register
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+      - name: Deploy rollback version
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service $SERVICE_NAME \
+            --task-definition $TASK_DEF_ARN
