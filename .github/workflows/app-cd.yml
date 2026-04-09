@@ -62,15 +62,19 @@ jobs:
             .containerDefinitions[0].image = $IMAGE
           ' task-def.json > new-task-def.json
 
-      - name: Register new task definition
+      - name: Register new task definition revision
+        id: register-task
         run: |
-          aws ecs register-task-definition \
-            --cli-input-json file://new-task-def.json
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
 
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
 
-      - name: Update ECS service
+      - name: Deploy updated task definition to ECS service
         run: |
           aws ecs update-service \
             --cluster $CLUSTER_NAME \
             --service $SERVICE_NAME \
-            --force-new-deployment
+            --task-definition $TASK_DEF_ARN
