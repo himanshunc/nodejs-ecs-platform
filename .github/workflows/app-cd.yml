@@ -29,6 +29,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set short commit SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -44,7 +47,7 @@ jobs:
 
       - name: Update container image
         run: |
-          IMAGE_URI=500849274222.dkr.ecr.ap-south-1.amazonaws.com/$ECR_REPOSITORY:latest
+          IMAGE_URI=500849274222.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$SHORT_SHA
 
           jq --arg IMAGE "$IMAGE_URI" '
             del(
@@ -64,7 +67,7 @@ jobs:
           aws ecs register-task-definition \
             --cli-input-json file://new-task-def.json
 
-            
+
       - name: Update ECS service
         run: |
           aws ecs update-service \
