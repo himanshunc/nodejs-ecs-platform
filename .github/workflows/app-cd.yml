@@ -57,8 +57,8 @@ jobs:
               .compatibilities,
               .registeredAt,
               .registeredBy
-            )
-            | .containerDefinitions[0].image = $IMAGE
+            ) |
+            .containerDefinitions[0].image = $IMAGE
             ' > new-task-def.json
 
             - name: Register new task definition
