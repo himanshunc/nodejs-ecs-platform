@@ -1,0 +1,40 @@
+name: Rollback ECS by Task Revision
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_revision:
+        description: "Enter task definition revision (e.g. nodejs-dev-ecs-task:6)"
+        required: true
+
+env:
+  AWS_REGION: ap-south-1
+  CLUSTER_NAME: nodejs-dev-ecs-cluster
+  SERVICE_NAME: nodejs-dev-ecs-service
+
+jobs:
+  rollback:
+    name: Rollback using Task Definition
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::500849274222:role/nodejs-dev-github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Print rollback target
+        run: |
+          echo "Rolling back to task: ${{ github.event.inputs.task_revision }}"
+
+      - name: Deploy previous task definition
+        run: |
+          aws ecs update-service \
+            --cluster $CLUSTER_NAME \
+            --service $SERVICE_NAME \
+            --task-definition ${{ github.event.inputs.task_revision }}
