@@ -1,12 +1,11 @@
 name: App CD - Deploy to ECS
 
 on:
-  push:
-    branches:
-      - develop
-    paths:
-      - 'app/**'
-      - '.github/workflows/app-cd.yml'
+  workflow_run:
+    workflows:
+      - "App CI - Build and Push Docker Image"
+    types:
+      - completed
 
 env:
   AWS_REGION: ap-south-1
@@ -18,6 +17,7 @@ env:
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
     name: Deploy to ECS
     runs-on: ubuntu-latest
 
