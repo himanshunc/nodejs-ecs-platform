@@ -2,9 +2,6 @@ aws_region   = "ap-south-1"
 project_name = "nodejs"
 environment  = "dev"
 
-github_org  = "himanshunc"
-github_repo = "nodejs-ecs-app"
-
 vpc_cidr = "10.0.0.0/16"
 
 availability_zones = [
@@ -29,3 +26,6 @@ desired_count     = 1
 task_cpu          = "256"
 task_memory       = "512"
 health_check_path = "/health"
+
+github_org  = "himanshunc"
+github_repo = "nodejs-ecs-platform"
