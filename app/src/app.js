@@ -7,7 +7,7 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
   res.status(200).json({
-    message: "Node.js ECS app is running"
+    message: "Node.js ECS app is running - CI/CD verified"
   });
 });
 
