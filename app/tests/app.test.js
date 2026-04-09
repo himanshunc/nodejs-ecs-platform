@@ -5,7 +5,7 @@ describe("App health checks", () => {
   test("GET / should return 200", async () => {
     const res = await request(app).get("/");
     expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe("Node.js ECS app is running - CI/CD verified");
+    expect(res.body.message).toBe("Node.js ECS app is running - CI/CD verified - Himanshu");
   });
 
   test("GET /health should return 200", async () => {
